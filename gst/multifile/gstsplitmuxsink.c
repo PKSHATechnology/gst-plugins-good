@@ -102,6 +102,7 @@ enum
   SIGNAL_FORMAT_LOCATION,
   SIGNAL_FORMAT_LOCATION_FULL,
   SIGNAL_SPLIT_NOW,
+  SIGNAL_RECORD_FRAME,
   SIGNAL_LAST
 };
 
@@ -325,6 +326,19 @@ gst_splitmux_sink_class_init (GstSplitMuxSinkClass * klass)
           split_now), NULL, NULL, NULL, G_TYPE_NONE, 0);
 
   klass->split_now = split_now;
+
+  /**
+   * GstSplitMuxSink::record-frame:
+   * @splitmux: the #GstSplitMuxSink
+   * @fragment_id: the sequence number of the file to be created
+   * @pts: pts
+   * @offset_in_file: offset of pts in the file
+   * @file_path: the path of the file
+   */
+  signals[SIGNAL_RECORD_FRAME] =
+      g_signal_new ("record-frame", G_TYPE_FROM_CLASS (klass),
+      G_SIGNAL_RUN_LAST, 0, NULL, NULL, NULL, G_TYPE_NONE,
+      4, G_TYPE_UINT, GST_TYPE_CLOCK_TIME, GST_TYPE_CLOCK_TIME, G_TYPE_STRING);
 }
 
 static void
@@ -1095,6 +1109,16 @@ handle_mq_output (GstPad * pad, GstPadProbeInfo * info, MqStreamCtx * ctx)
       "Pad %" GST_PTR_FORMAT " buffer with run TS %" GST_STIME_FORMAT
       " size %" G_GUINT64_FORMAT,
       pad, GST_STIME_ARGS (ctx->out_running_time), buf_info->buf_size);
+
+  gchar *fname;
+  if (splitmux->sink != NULL) {
+    g_object_get (splitmux->sink, "location", &fname, NULL);
+    if (fname != NULL) {
+      g_signal_emit (splitmux, signals[SIGNAL_RECORD_FRAME], 0,
+          splitmux->fragment_id, buf_info->run_ts,
+          buf_info->run_ts - splitmux->fragment_start_time, fname);
+    }
+  }
 
   ctx->caps_change = FALSE;
 
