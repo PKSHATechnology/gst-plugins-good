@@ -168,6 +168,8 @@ struct _GstSplitMuxSink
   gboolean muxer_has_reserved_props;
 
   gboolean split_now;
+
+  GstClockTime start_time_in_file;
 };
 
 struct _GstSplitMuxSinkClass
