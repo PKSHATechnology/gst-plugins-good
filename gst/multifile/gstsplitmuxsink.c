@@ -930,6 +930,7 @@ handle_mq_output (GstPad * pad, GstPadProbeInfo * info, MqStreamCtx * ctx)
 {
   GstSplitMuxSink *splitmux = ctx->splitmux;
   MqStreamBuf *buf_info = NULL;
+  GstClockTime offset_in_file;
 
   GST_LOG_OBJECT (pad, "Fired probe type 0x%x", info->type);
 
@@ -1116,7 +1117,7 @@ handle_mq_output (GstPad * pad, GstPadProbeInfo * info, MqStreamCtx * ctx)
     if (fname != NULL) {
       g_signal_emit (splitmux, signals[SIGNAL_RECORD_FRAME], 0,
           splitmux->fragment_id, buf_info->run_ts,
-          buf_info->run_ts - splitmux->fragment_start_time, fname);
+          buf_info->run_ts - splitmux->start_time_in_file, fname);
     }
   }
 
@@ -2415,6 +2416,7 @@ set_next_filename (GstSplitMuxSink * splitmux, MqStreamCtx * ctx)
     g_free (fname);
 
     splitmux->fragment_id++;
+    splitmux->start_time_in_file = ctx->out_running_time;
   }
 }
 
